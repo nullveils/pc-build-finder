@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Build Finder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 800px;
+            margin: 0 auto 24px auto;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo { color: white; font-size: 22px; font-weight: 700; }
+
+        .currency-selector {
+            background: white;
+            border-radius: 8px;
+            padding: 6px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .currency-btn {
+            padding: 7px 12px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .currency-btn.active { background: #667eea; color: white; }
+        .currency-btn:hover:not(.active) { background: #ddd; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 36px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+        h1 { color: #1a1a2e; margin-bottom: 6px; font-size: 26px; }
+        .subtitle { color: #666; margin-bottom: 28px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        input[type="number"]:focus { outline: none; border-color: #667eea; }
+
+        .hint { font-size: 12px; color: #888; margin-top: 5px; }
+
+        /* ── Game tag input ── */
+        .game-input-wrapper {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 48px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            cursor: text;
+            transition: border-color 0.2s;
+            background: white;
+            position: relative;
+        }
+
+        .game-input-wrapper:focus-within { border-color: #667eea; }
+
+        .game-tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .game-tag .remove {
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+
+        .game-tag .remove:hover { opacity: 1; }
+
+        #gameTyping {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            font-family: inherit;
+            flex: 1;
+            min-width: 140px;
+            padding: 4px;
+            background: transparent;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: -2px;
+            right: -2px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .dropdown.open { display: block; }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.15s;
+        }
+
+        .dropdown-item:hover,
+        .dropdown-item.active { background: #f0f2ff; color: #667eea; }
+
+        /* ── Buttons ── */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 4px;
+        }
+
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .submit-btn:active { transform: translateY(0); }
+
+        /* ── Error ── */
+        .error-box {
+            background: #fff0f0;
+            border-left: 4px solid #e74c3c;
+            color: #c0392b;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-box.show { display: block; }
+
+        /* ── Results ── */
+        .results { display: none; margin-top: 36px; }
+        .results.show { display: block; }
+
+        .results h2 {
+            color: #1a1a2e;
+            font-size: 20px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .summary-box {
+            background: #f5f7ff;
+            border-left: 4px solid #667eea;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary-box p { font-size: 14px; color: #444; margin-bottom: 4px; }
+        .summary-box p:last-child { margin-bottom: 0; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-low    { background: #d4edda; color: #155724; }
+        .badge-medium { background: #fff3cd; color: #856404; }
+        .badge-high   { background: #f8d7da; color: #721c24; }
+
+        .fits-msg { color: #27ae60; font-weight: 600; margin-top: 8px; font-size: 14px; }
+        .over-msg { color: #e67e22; font-weight: 600; margin-top: 8px; font-size: 14px; }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 560px) { .components-grid { grid-template-columns: 1fr; } }
+
+        .component-card {
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 14px;
+            border-top: 3px solid #667eea;
+        }
+
+        .component-type {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .component-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .component-spec {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .component-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .amazon-btn {
+            display: block;
+            text-align: center;
+            padding: 7px 12px;
+            background: #ff9900;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .amazon-btn:hover { background: #e68a00; }
+
+        /* ── Reviews ── */
+        .reviews-section {
+            margin-top: 32px;
+            border-top: 2px solid #e8e8e8;
+            padding-top: 24px;
+        }
+
+        .reviews-section h3 {
+            font-size: 17px;
+            color: #1a1a2e;
+            margin-bottom: 16px;
+        }
+
+        .review-stats {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            background: #f5f7ff;
+            padding: 14px 16px;
+            border-radius: 8px;
+        }
+
+        .review-avg {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+
+        .review-stars-display { font-size: 20px; margin-bottom: 2px; }
+
+        .review-count { font-size: 13px; color: #888; }
+
+        .review-form-box {
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .review-form-box p {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .star-picker {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .star-picker button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            opacity: 0.35;
+            transition: opacity 0.15s, transform 0.1s;
+            width: auto;
+        }
+
+        .star-picker button.lit     { opacity: 1; }
+        .star-picker button:hover   { transform: scale(1.15); }
+
+        .review-comment-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 72px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .review-comment-input:focus { outline: none; border-color: #667eea; }
+
+        .review-submit-btn {
+            padding: 9px 22px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: auto;
+        }
+
+        .review-submit-btn:hover { background: #5567d5; }
+        .review-submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        .review-thanks {
+            color: #27ae60;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+            margin-top: 8px;
+        }
+
+        .review-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .review-card {
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 13px 16px;
+        }
+
+        .review-card-stars { font-size: 15px; margin-bottom: 4px; }
+
+        .review-card-comment {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+
+        .review-card-meta { font-size: 12px; color: #aaa; }
+
+        .no-reviews { font-size: 14px; color: #aaa; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">🎮 PC Build Finder</div>
+    <div class="currency-selector">
+        <button class="currency-btn active" data-currency="EUR">EUR €</button>
+        <button class="currency-btn" data-currency="USD">USD $</button>
+        <button class="currency-btn" data-currency="CAD">CAD $</button>
+        <button class="currency-btn" data-currency="GBP">GBP £</button>
+    </div>
+</div>
+
+<div class="container">
+    <h1>Find Your Perfect Gaming PC</h1>
+    <p class="subtitle">Tell us your games and budget — we'll recommend the best parts.</p>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="form-group">
+        <label>Budget (<span id="currencyLabel">€</span>)</label>
+        <input type="number" id="budgetInput" placeholder="e.g. 1000" min="1">
+        <div class="hint" id="budgetHint"></div>
+    </div>
+
+    <div class="form-group">
+        <label>Games you play</label>
+        <div class="game-input-wrapper" id="gameWrapper">
+            <input id="gameTyping" type="text" placeholder="Type a game name…" autocomplete="off">
+            <div class="dropdown" id="gameDropdown"></div>
+        </div>
+        <div class="hint">Type to search, click to add. Add as many as you like.</div>
+    </div>
+
+    <button class="submit-btn" onclick="generateBuild()">Find My Build →</button>
+
+    <!-- Results -->
+    <div class="results" id="results">
+        <h2>Your Recommended Build</h2>
+        <div class="summary-box" id="summaryBox"></div>
+        <div class="components-grid" id="componentsGrid"></div>
+
+        <!-- Reviews -->
+        <div class="reviews-section" id="reviewsSection">
+            <h3>Community Reviews for this Build</h3>
+
+            <div class="review-stats" id="reviewStats"></div>
+
+            <div class="review-form-box" id="reviewFormBox">
+                <p>Did this build recommendation help you?</p>
+                <div class="star-picker" id="starPicker">
+                    <button data-star="1" onclick="pickStar(1)">★</button>
+                    <button data-star="2" onclick="pickStar(2)">★</button>
+                    <button data-star="3" onclick="pickStar(3)">★</button>
+                    <button data-star="4" onclick="pickStar(4)">★</button>
+                    <button data-star="5" onclick="pickStar(5)">★</button>
+                </div>
+                <textarea class="review-comment-input" id="reviewComment" placeholder="Optional: share what games you play, what you ended up buying, or anything helpful for others…"></textarea>
+                <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()" disabled>Leave a Review</button>
+                <div class="review-thanks" id="reviewThanks">✓ Thanks for your review!</div>
+            </div>
+
+            <div class="review-list" id="reviewList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─── AFFILIATE TAGS ──────────────────────────────────────────────────────────
+// Replace each value with your real Amazon Associates tracking ID for that store
+
+const AFFILIATE_TAGS = {
+    EUR: 'YOUR_DE_TAG',   // amazon.de  — used for EUR
+    USD: 'YOUR_US_TAG',   // amazon.com — used for USD
+    CAD: 'YOUR_CA_TAG',   // amazon.ca  — used for CAD
+    GBP: 'YOUR_UK_TAG',   // amazon.co.uk — used for GBP
+};
+
+const AMAZON_DOMAINS = {
+    EUR: 'https://www.amazon.de',
+    USD: 'https://www.amazon.com',
+    CAD: 'https://www.amazon.ca',
+    GBP: 'https://www.amazon.co.uk',
+};
+
+// Build an affiliate URL for the current currency automatically
+function affiliateUrl(searchQuery) {
+    const domain = AMAZON_DOMAINS[currentCurrency];
+    const tag    = AFFILIATE_TAGS[currentCurrency];
+    return `${domain}/s?k=${encodeURIComponent(searchQuery)}&tag=${tag}`;
+}
+
+// ─── CURRENCY ────────────────────────────────────────────────────────────────
+
+const EXCHANGE_RATES   = { EUR: 1.0, USD: 1.10, CAD: 1.50, GBP: 0.86 };
+const CURRENCY_SYMBOLS = { EUR: '€', USD: '$',   CAD: 'CA$', GBP: '£'  };
+
+// Budget limits in EUR — converted per currency on display
+const MIN_BUDGET_EUR = 500;
+const MAX_BUDGET_EUR = 5000;
+
+let currentCurrency = 'EUR';
+
+document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCurrency = btn.dataset.currency;
+        updateCurrencyUI();
+    });
+});
+
+function sym()  { return CURRENCY_SYMBOLS[currentCurrency]; }
+function rate() { return EXCHANGE_RATES[currentCurrency]; }
+function convertPrice(eur) { return Math.round(eur * rate()); }
+
+function updateCurrencyUI() {
+    document.getElementById('currencyLabel').textContent = sym();
+    const minVal = convertPrice(MIN_BUDGET_EUR);
+    const maxVal = convertPrice(MAX_BUDGET_EUR);
+    document.getElementById('budgetHint').textContent =
+        `Minimum ${sym()}${minVal.toLocaleString()} · Maximum ${sym()}${maxVal.toLocaleString()}`;
+}
+
+// ─── GAME DATA ───────────────────────────────────────────────────────────────
+
+const GAME_PROFILES = {
+    // ── Low tier ─────────────────────────────────────────────────────────────
+    'among us':             { tier: 'low' },
+    'apex legends':         { tier: 'low' },
+    'cs2':                  { tier: 'low' },
+    'cs:go':                { tier: 'low' },
+    'counter-strike 2':     { tier: 'low' },
+    'dota 2':               { tier: 'low' },
+    'hades':                { tier: 'low' },
+    'league of legends':    { tier: 'low' },
+    'minecraft':            { tier: 'low' },
+    'overwatch 2':          { tier: 'low' },
+    'roblox':               { tier: 'low' },
+    'rocket league':        { tier: 'low' },
+    'stardew valley':       { tier: 'low' },
+    'terraria':             { tier: 'low' },
+    'valheim':              { tier: 'low' },
+    'valorant':             { tier: 'low' },
+    // ── Medium tier ───────────────────────────────────────────────────────────
+    'call of duty':         { tier: 'medium' },
+    'call of duty mw3':     { tier: 'medium' },
+    'destiny 2':            { tier: 'medium' },
+    'elden ring':           { tier: 'medium' },
+    'fallout 4':            { tier: 'medium' },
+    'fortnite':             { tier: 'medium' },
+    'gta v':                { tier: 'medium' },
+    'gtav':                 { tier: 'medium' },
+    'helldivers 2':         { tier: 'medium' },
+    'palworld':             { tier: 'medium' },
+    'rainbow six siege':    { tier: 'medium' },
+    'red dead 2':           { tier: 'medium' },
+    'red dead redemption 2':{ tier: 'medium' },
+    'skyrim':               { tier: 'medium' },
+    'the witcher 3':        { tier: 'medium' },
+    'warframe':             { tier: 'medium' },
+    'witcher 3':            { tier: 'medium' },
+    // ── High tier ─────────────────────────────────────────────────────────────
+    'alan wake 2':          { tier: 'high' },
+    "baldur's gate 3":      { tier: 'high' },
+    'baldurs gate 3':       { tier: 'high' },
+    'cyberpunk':            { tier: 'high' },
+    'cyberpunk 2077':       { tier: 'high' },
+    "dragon's dogma 2":     { tier: 'high' },
+    'final fantasy xvi':    { tier: 'high' },
+    'star wars outlaws':    { tier: 'high' },
+    'starfield':            { tier: 'high' },
+};
+
+const ALL_GAMES = Object.keys(GAME_PROFILES).sort();
+
+// ─── PRODUCT DATA ─────────────────────────────────────────────────────────────
+// Prices stored in EUR. affiliate URL built dynamically from search keyword.
+
+const PRODUCTS = {
+    CPU: {
+        low:    { name: 'Intel Core i3-13100F',       price_eur: 120, specs: '4-core / 8-thread, 3.4–4.1 GHz',              search: 'Intel Core i3-13100F' },
+        medium: { name: 'AMD Ryzen 5 5600',            price_eur: 210, specs: '6-core / 12-thread, 3.5–4.6 GHz',             search: 'AMD Ryzen 5 5600' },
+        high:   { name: 'AMD Ryzen 7 7800X3D',         price_eur: 420, specs: '8-core / 16-thread, 4.2–5.0 GHz, 3D V-Cache', search: 'AMD Ryzen 7 7800X3D' },
+    },
+    GPU: {
+        low:    { name: 'NVIDIA GeForce GTX 1650',     price_eur: 180, specs: '4 GB GDDR6, 896 CUDA cores',                  search: 'NVIDIA GTX 1650' },
+        medium: { name: 'NVIDIA GeForce RTX 4060',     price_eur: 290, specs: '8 GB GDDR6, 3072 CUDA cores',                 search: 'NVIDIA RTX 4060' },
+        high:   { name: 'NVIDIA GeForce RTX 4070 Super', price_eur: 580, specs: '12 GB GDDR6X, 5888 CUDA cores',             search: 'NVIDIA RTX 4070 Super' },
+    },
+    RAM: {
+        low:    { name: 'Corsair Vengeance LPX 16 GB', price_eur: 55,  specs: 'DDR4-3200 MHz, CL16',                         search: 'Corsair Vengeance LPX 16GB DDR4' },
+        medium: { name: 'G.Skill Trident Z5 32 GB',    price_eur: 140, specs: 'DDR5-6000 MHz, CL30',                         search: 'G.Skill Trident Z5 32GB DDR5' },
+        high:   { name: 'Corsair Dominator 64 GB',     price_eur: 340, specs: 'DDR5-6000 MHz, CL30, RGB',                    search: 'Corsair Dominator Platinum 64GB DDR5' },
+    },
+    Storage: {
+        low:    { name: 'Kingston A2000 500 GB NVMe',  price_eur: 35,  specs: 'PCIe 3.0, up to 2000 MB/s read',              search: 'Kingston A2000 500GB NVMe' },
+        medium: { name: 'Samsung 990 Pro 1 TB NVMe',   price_eur: 110, specs: 'PCIe 4.0, up to 7100 MB/s read',              search: 'Samsung 990 Pro 1TB NVMe' },
+        high:   { name: 'WD Black SN850X 2 TB NVMe',   price_eur: 220, specs: 'PCIe 4.0, up to 7100 MB/s read',              search: 'WD Black SN850X 2TB NVMe' },
+    },
+    PSU: {
+        low:    { name: 'Corsair CV550 550 W',          price_eur: 55,  specs: '80+ Bronze, non-modular',                     search: 'Corsair CV550 550W PSU' },
+        medium: { name: 'Corsair RM750e 750 W',         price_eur: 95,  specs: '80+ Gold, fully modular',                     search: 'Corsair RM750e 750W PSU' },
+        high:   { name: 'Corsair RM1000e 1000 W',       price_eur: 170, specs: '80+ Gold, fully modular',                     search: 'Corsair RM1000e 1000W PSU' },
+    },
+    Motherboard: {
+        low:    { name: 'MSI PRO B650M-A WiFi',         price_eur: 130, specs: 'AM5, Micro-ATX, PCIe 5.0, WiFi 6E',          search: 'MSI PRO B650M-A WiFi motherboard' },
+        medium: { name: 'MSI MPG B850E EDGE WiFi',      price_eur: 280, specs: 'AM5, ATX, PCIe 5.0, WiFi 7',                 search: 'MSI MPG B850E EDGE WiFi motherboard' },
+        high:   { name: 'ASUS ROG MAXIMUS Z890-E',      price_eur: 450, specs: 'LGA1700, ATX, PCIe 5.0, WiFi 7',             search: 'ASUS ROG MAXIMUS Z890-E motherboard' },
+    },
+};
+
+// ─── GAME TAG INPUT ───────────────────────────────────────────────────────────
+
+let selectedGames = [];
+
+const gameWrapper  = document.getElementById('gameWrapper');
+const gameTyping   = document.getElementById('gameTyping');
+const gameDropdown = document.getElementById('gameDropdown');
+
+gameWrapper.addEventListener('click', () => gameTyping.focus());
+gameTyping.addEventListener('input', renderDropdown);
+
+gameTyping.addEventListener('keydown', e => {
+    const items  = gameDropdown.querySelectorAll('.dropdown-item');
+    const active = gameDropdown.querySelector('.dropdown-item.active');
+    let idx      = active ? [...items].indexOf(active) : -1;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (active) active.classList.remove('active');
+        idx = Math.min(idx + 1, items.length - 1);
+        if (items[idx]) items[idx].classList.add('active');
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (active) active.classList.remove('active');
+        idx = Math.max(idx - 1, 0);
+        if (items[idx]) items[idx].classList.add('active');
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (active) addGame(active.dataset.game);
+    } else if (e.key === 'Escape') {
+        closeDropdown();
+    }
+});
+
+document.addEventListener('click', e => {
+    if (!gameWrapper.contains(e.target)) closeDropdown();
+});
+
+function renderDropdown() {
+    const q = gameTyping.value.trim().toLowerCase();
+    if (!q) { closeDropdown(); return; }
+
+    const matches = ALL_GAMES.filter(g =>
+        g.includes(q) && !selectedGames.includes(g)
+    ).slice(0, 10);
+
+    if (!matches.length) { closeDropdown(); return; }
+
+    gameDropdown.innerHTML = matches.map(g =>
+        `<div class="dropdown-item" data-game="${g}">${capitalise(g)}</div>`
+    ).join('');
+
+    gameDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('mousedown', ev => {
+            ev.preventDefault();
+            addGame(item.dataset.game);
+        });
+    });
+
+    gameDropdown.classList.add('open');
+}
+
+function closeDropdown() {
+    gameDropdown.classList.remove('open');
+    gameDropdown.innerHTML = '';
+}
+
+function addGame(game) {
+    if (selectedGames.includes(game)) { closeDropdown(); return; }
+    selectedGames.push(game);
+    gameTyping.value = '';
+    closeDropdown();
+    renderTags();
+}
+
+function removeGame(game) {
+    selectedGames = selectedGames.filter(g => g !== game);
+    renderTags();
+}
+
+function renderTags() {
+    document.querySelectorAll('.game-tag').forEach(t => t.remove());
+    selectedGames.forEach(game => {
+        const tag = document.createElement('div');
+        tag.className = 'game-tag';
+        tag.innerHTML = `${capitalise(game)}<span class="remove" data-game="${game}">×</span>`;
+        tag.querySelector('.remove').addEventListener('click', () => removeGame(game));
+        gameWrapper.insertBefore(tag, gameTyping);
+    });
+}
+
+function capitalise(str) {
+    return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ─── BUILD LOGIC ──────────────────────────────────────────────────────────────
+
+let currentTier = 'low'; // tracked so reviews are scoped to the right tier
+
+function getTier(games, budgetEur) {
+    let gameTier = 'low';
+    games.forEach(g => {
+        const profile = GAME_PROFILES[g];
+        if (!profile) return;
+        if (profile.tier === 'high') gameTier = 'high';
+        else if (profile.tier === 'medium' && gameTier === 'low') gameTier = 'medium';
+    });
+
+    const budgetTier = budgetEur < 700 ? 'low' : budgetEur < 1500 ? 'medium' : 'high';
+    const rank       = { low: 0, medium: 1, high: 2 };
+    return rank[gameTier] >= rank[budgetTier] ? gameTier : budgetTier;
+}
+
+function generateBuild() {
+    const errorBox = document.getElementById('errorBox');
+    errorBox.classList.remove('show');
+    document.getElementById('results').classList.remove('show');
+
+    // ── Validate budget ──
+    const budgetRaw = parseFloat(document.getElementById('budgetInput').value);
+    if (!budgetRaw || isNaN(budgetRaw) || budgetRaw <= 0) {
+        showError('Please enter a valid budget.');
+        return;
+    }
+
+    const budgetEur = budgetRaw / rate();
+
+    if (budgetEur < MIN_BUDGET_EUR) {
+        showError(`Budget too low. Minimum is ${sym()}${convertPrice(MIN_BUDGET_EUR).toLocaleString()}.`);
+        return;
+    }
+    if (budgetEur > MAX_BUDGET_EUR) {
+        showError(`Budget too high. Maximum is ${sym()}${convertPrice(MAX_BUDGET_EUR).toLocaleString()}.`);
+        return;
+    }
+
+    // ── Validate games ──
+    if (selectedGames.length === 0) {
+        showError('Please add at least one game.');
+        return;
+    }
+
+    // ── Build ──
+    currentTier = getTier(selectedGames, budgetEur);
+    let totalEur = 0;
+    const components = {};
+
+    for (const [cat, tiers] of Object.entries(PRODUCTS)) {
+        const p = tiers[currentTier];
+        components[cat] = {
+            name:  p.name,
+            specs: p.specs,
+            price: convertPrice(p.price_eur),
+            url:   affiliateUrl(p.search),
+        };
+        totalEur += p.price_eur;
+    }
+
+    const totalConverted = convertPrice(totalEur);
+    const fits           = totalConverted <= budgetRaw;
+    const diff           = Math.abs(Math.round(budgetRaw - totalConverted));
+
+    renderResults(currentTier, budgetRaw, totalConverted, fits, diff, components);
+}
+
+function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('show');
+}
+
+function renderResults(tier, budget, total, fits, diff, components) {
+    const tierLabels = { low: 'Budget',   medium: 'Mid-Range', high: 'High-End' };
+    const badgeClass = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high' };
+
+    // Summary
+    document.getElementById('summaryBox').innerHTML = `
+        <p><strong>Build tier:</strong>
+            <span class="badge ${badgeClass[tier]}">${tierLabels[tier]}</span>
+        </p>
+        <p style="margin-top:8px">
+            <strong>Estimated total:</strong> ${sym()}${total.toLocaleString()}
+        </p>
+        <p><strong>Your budget:</strong> ${sym()}${Math.round(budget).toLocaleString()}</p>
+        <p class="${fits ? 'fits-msg' : 'over-msg'}">
+            ${fits
+                ? `✓ Fits your budget — ${sym()}${diff.toLocaleString()} to spare!`
+                : `⚠ ${sym()}${diff.toLocaleString()} over budget — consider a higher budget or lower tier.`}
+        </p>
+    `;
+
+    // Component cards
+    const grid = document.getElementById('componentsGrid');
+    grid.innerHTML = '';
+    for (const [cat, p] of Object.entries(components)) {
+        grid.innerHTML += `
+            <div class="component-card">
+                <div class="component-type">${cat}</div>
+                <div class="component-name">${p.name}</div>
+                <div class="component-spec">${p.specs}</div>
+                <div class="component-price">${sym()}${p.price.toLocaleString()}</div>
+                <a class="amazon-btn" href="${p.url}" target="_blank" rel="noopener">
+                    View on Amazon ↗
+                </a>
+            </div>
+        `;
+    }
+
+    // Show results, then load reviews for this tier
+    document.getElementById('results').classList.add('show');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    resetReviewForm();
+    loadReviews(tier);
+}
+
+// ─── REVIEWS (localStorage) ───────────────────────────────────────────────────
+
+const STORAGE_KEY = 'pcbf_reviews_v1';
+let pickedStar = 0;
+
+// Load all reviews from localStorage, return as parsed array
+function allReviews() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+// Save a new review for the given tier
+function saveReview(tier, rating, comment) {
+    const reviews = allReviews();
+    reviews.push({
+        tier:      tier,
+        rating:    rating,
+        comment:   comment.trim(),
+        timestamp: Date.now(),
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+}
+
+// Get reviews for a specific tier
+function reviewsForTier(tier) {
+    return allReviews().filter(r => r.tier === tier);
+}
+
+// Render star string e.g. "★★★★☆"
+function starsHtml(rating, total = 5) {
+    return '★'.repeat(rating) + '☆'.repeat(total - rating);
+}
+
+// Calculate average rating, return null if no reviews
+function avgRating(reviews) {
+    if (!reviews.length) return null;
+    return Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10;
+}
+
+// Format timestamp as relative time e.g. "3 days ago"
+function timeAgo(ts) {
+    const sec = Math.floor((Date.now() - ts) / 1000);
+    if (sec < 60)     return 'just now';
+    if (sec < 3600)   return `${Math.floor(sec / 60)} min ago`;
+    if (sec < 86400)  return `${Math.floor(sec / 3600)} hr ago`;
+    return `${Math.floor(sec / 86400)} days ago`;
+}
+
+// Render the stats bar and review list for the given tier
+function loadReviews(tier) {
+    const reviews = reviewsForTier(tier);
+    const avg     = avgRating(reviews);
+
+    // Stats
+    const statsEl = document.getElementById('reviewStats');
+    if (avg !== null) {
+        statsEl.innerHTML = `
+            <div class="review-avg">${avg.toFixed(1)}</div>
+            <div>
+                <div class="review-stars-display">${starsHtml(Math.round(avg))}</div>
+                <div class="review-count">${reviews.length} review${reviews.length !== 1 ? 's' : ''} for this build tier</div>
+            </div>
+        `;
+    } else {
+        statsEl.innerHTML = `<div class="review-count">No reviews yet for this build tier — be the first!</div>`;
+    }
+
+    // Review list — show latest 10, most recent first
+    const listEl = document.getElementById('reviewList');
+    const recent = [...reviews].reverse().slice(0, 10);
+
+    if (!recent.length) {
+        listEl.innerHTML = '<p class="no-reviews">No reviews yet. Leave one below!</p>';
+        return;
+    }
+
+    listEl.innerHTML = recent.map(r => `
+        <div class="review-card">
+            <div class="review-card-stars">${starsHtml(r.rating)}</div>
+            ${r.comment ? `<div class="review-card-comment">${escapeHtml(r.comment)}</div>` : ''}
+            <div class="review-card-meta">${timeAgo(r.timestamp)}</div>
+        </div>
+    `).join('');
+}
+
+// Prevent XSS in user-supplied comment text
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Handle star picker clicks
+function pickStar(n) {
+    pickedStar = n;
+    document.querySelectorAll('#starPicker button').forEach((btn, i) => {
+        btn.classList.toggle('lit', i < n);
+    });
+    document.getElementById('reviewSubmitBtn').disabled = false;
+}
+
+// Submit the review
+function submitReview() {
+    if (!pickedStar) return;
+
+    const comment = document.getElementById('reviewComment').value;
+    saveReview(currentTier, pickedStar, comment);
+
+    // Hide form, show thanks, reload stats + list
+    document.getElementById('reviewFormBox').style.display = 'none';
+    document.getElementById('reviewThanks').style.display  = 'block';
+    loadReviews(currentTier);
+}
+
+// Reset review form when a new build is generated
+function resetReviewForm() {
+    pickedStar = 0;
+    document.getElementById('reviewFormBox').style.display = '';
+    document.getElementById('reviewThanks').style.display  = 'none';
+    document.getElementById('reviewComment').value         = '';
+    document.getElementById('reviewSubmitBtn').disabled    = true;
+    document.querySelectorAll('#starPicker button').forEach(b => b.classList.remove('lit'));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+updateCurrencyUI();
+</script>
+</body>
+</html>
